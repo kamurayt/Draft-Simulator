@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ドラフトシミュレーター</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<style>
+body {
+  margin: 0;
+  background: #0b1020;
+  color: white;
+  font-family: sans-serif;
+  text-align: center;
+}
+
+button {
+  margin: 3px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  font-weight: bold;
+}
+
+input {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  margin: 8px;
+  font-size: 14px;
+}
+
+.screen {
+  padding: 20px;
+}
+
+.screen h1 {
+  font-size: clamp(26px, 7vw, 44px);
+  white-space: nowrap;
+}
+
+.top {
+  padding: 6px;
+}
+
+.room-row {
+  font-size: 16px;
+  font-weight: bold;
+  margin: 4px;
+}
+
+.top-mini {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  font-size: 18px;
+  font-weight: bold;
+  margin: 4px 0;
+}
+
+.mySeat {
+  font-size: 12px;
+  color: #9ee7ff;
+  margin: 3px 0;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 2.3fr 1fr;
+  gap: 6px;
+  padding: 6px;
+  height: calc(100vh - 135px);
+  box-sizing: border-box;
+}
+
+.team {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.team h3 {
+  margin: 3px 0;
+  font-size: 15px;
+}
+
+.player {
+  border: 2px solid #444;
+  border-radius: 10px;
+  padding: 7px 3px;
+  background: #151b2e;
+  min-height: 48px;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  transition: 0.2s;
+}
+
+.active {
+  border-color: yellow;
+  box-shadow: 0 0 16px yellow;
+  transform: scale(1.03);
+}
+
+.myTurn {
+  border-color: #5ecbff;
+  box-shadow: 0 0 18px #5ecbff;
+}
+
+.banBox {
+  border: 2px solid #777;
+  background: #202846;
+}
+
+.banList {
+  font-size: 9.5px;
+  line-height: 1.3;
+}
+
+.centerBox {
+  border: 2px solid #334;
+  border-radius: 12px;
+  background: #10172a;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.filters button {
+  font-size: 10px;
+  padding: 6px 7px;
+}
+
+.selectedRole,
+.selectedTeam {
+  background: yellow;
+  color: black;
+  box-shadow: 0 0 12px yellow;
+}
+
+.searchInput {
+  width: 90%;
+  padding: 8px;
+  margin: 4px auto 6px;
+  font-size: 13px;
+}
+
+.pokemonScroll {
+  flex: 1;
+  min-height: 160px;
+  overflow-y: auto;
+  border: 1px solid #2f3a5a;
+  border-radius: 10px;
+  padding: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-start;
+  gap: 5px;
+}
+
+.pokemonScroll button {
+  min-width: 82px;
+  font-size: 10.5px;
+  padding: 7px 4px;
+}
+
+.role-アタック { background: #ff5c5c; color: white; }
+.role-バランス { background: #b76cff; color: white; }
+.role-スピード { background: #4db8ff; color: white; }
+.role-ディフェンス { background: #5cff7a; color: black; }
+.role-サポート { background: #ffe45c; color: black; }
+
+.pickControl {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #2f3a5a;
+  background: #10172a;
+  font-size: 13px;
+}
+
+.pickControl button {
+  width: 80%;
+  padding: 11px;
+  font-size: 15px;
+}
+
+.bigPick {
+  font-size: 18px;
+  font-weight: bold;
+  padding: 10px;
+  margin: 5px auto;
+  border-radius: 12px;
+  background: #1f2a44;
+}
+
+.bigPick.selected {
+  animation: selectedPulse 0.6s ease infinite alternate;
+}
+
+@keyframes selectedPulse {
+  from { transform: scale(1); box-shadow: 0 0 10px rgba(94,203,255,0.45); }
+  to { transform: scale(1.04); box-shadow: 0 0 24px rgba(94,203,255,1); }
+}
+
+.popup {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.84);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.popupContent {
+  background: linear-gradient(180deg, #1b2f6b 0%, #0c1638 100%);
+  border: 3px solid #5ecbff;
+  border-radius: 16px;
+  padding: 20px 30px;
+  box-shadow: 0 0 20px rgba(94,203,255,0.6);
+}
+
+.popupTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: #e6f7ff;
+}
+
+.banReveal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 55px;
+  row-gap: 4px;
+  font-size: 16px;
+  margin-top: 10px;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  top: 18%;
+  transform: translateX(-50%);
+  z-index: 120;
+  background: linear-gradient(180deg, #202c5a, #101735);
+  border: 2px solid #9ee7ff;
+  border-radius: 14px;
+  padding: 10px 18px;
+  box-shadow: 0 0 18px rgba(94,203,255,0.65);
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.hidden {
+  display: none !important;
+}
+</style>
+</head>
+
+<body>
+
+<div id="popup" class="popup hidden"></div>
+<div id="toast" class="toast hidden"></div>
+
+<div id="homeScreen" class="screen">
+  <h1>ドラフトシミュレーター</h1>
+  <button onclick="createRoom()">ロビーを作る</button>
+  <button onclick="showJoinScreen()">ロビーに入る</button>
+</div>
+
+<div id="joinScreen" class="screen hidden">
+  <h2>ロビーに入る</h2>
+  <input id="joinRoomId" placeholder="ロビーIDを入力">
+
+  <div>
+    <button id="joinTeamA" onclick="selectJoinTeam('A')">Aチーム</button>
+    <button id="joinTeamB" onclick="selectJoinTeam('B')">Bチーム</button>
+  </div>
+
+  <div id="selectedJoinTeam">チーム未選択</div>
+
+  <button id="loginButton" onclick="joinRoom()" disabled>ログイン</button>
+  <button onclick="backHome()">戻る</button>
+</div>
+
+<div id="gameScreen" class="hidden">
+  <div class="top">
+    <div class="room-row">
+      <span id="roomId">ロビーID：-----</span>
+      <button onclick="copyRoomId()">コピー</button>
+    </div>
+
+    <div class="top-mini">
+      <span id="phase">waiting</span>
+      <span id="timer">0</span>
+    </div>
+
+    <div id="mySeat" class="mySeat">あなた：未参加</div>
+
+    <div>
+      <button onclick="startCountdown()">開始</button>
+      <button onclick="location.reload()">リセット</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div id="teamA" class="team"></div>
+
+    <div class="centerBox">
+      <div id="roleFilters" class="filters"></div>
+
+      <input
+        id="searchInput"
+        class="searchInput"
+        placeholder="キャラ名で検索"
+        oninput="setSearchText()"
+      >
+
+      <div id="pokemonList" class="pokemonScroll"></div>
+      <div id="pickControl" class="pickControl"></div>
+    </div>
+
+    <div id="teamB" class="team"></div>
+  </div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDMtaAvmyEPs_Ezdo5L-vzrt2Q-H4MSkq0",
+  authDomain: "unitedraft-7d800.firebaseapp.com",
+  databaseURL: "https://unitedraft-7d800-default-rtdb.firebaseio.com",
+  projectId: "unitedraft-7d800",
+  storageBucket: "unitedraft-7d800.firebasestorage.app",
+  messagingSenderId: "1064568783811",
+  appId: "1:1064568783811:web:4176e95cf2ed8f5b437376"
+}
+
+firebase.initializeApp(firebaseConfig)
+const db = firebase.database()
+
+let phase = "waiting"
+let timer = 0
+let interval = null
+let roomId = ""
+let listening = false
+let isHost = false
+let lastPopupPhase = ""
+
+let myId = localStorage.getItem("uniteDraftMyId")
+if(!myId){
+  myId = Math.random().toString(36).substring(2, 11)
+  localStorage.setItem("uniteDraftMyId", myId)
+}
+
+let myPlayerIndex = null
+
+let pokemon = [
+  {name:"アブソル", role:"スピード"},
+  {name:"アマージョ", role:"バランス"},
+  {name:"アローラキュウコン", role:"アタック"},
+  {name:"アローラライチュウ", role:"アタック"},
+  {name:"イワパレス", role:"ディフェンス"},
+  {name:"インテレオン", role:"アタック"},
+  {name:"ウッウ", role:"アタック"},
+  {name:"ウーラオス", role:"バランス"},
+  {name:"エンペルト", role:"バランス"},
+  {name:"エースバーン", role:"アタック"},
+  {name:"エーフィ", role:"アタック"},
+  {name:"オーロット", role:"ディフェンス"},
+  {name:"カイリキー", role:"バランス"},
+  {name:"カイリュー", role:"バランス"},
+  {name:"カビゴン", role:"ディフェンス"},
+  {name:"カメックス", role:"ディフェンス"},
+  {name:"ガブリアス", role:"バランス"},
+  {name:"ガラルギャロップ", role:"スピード"},
+  {name:"キュワワー", role:"サポート"},
+  {name:"ギャラドス", role:"バランス"},
+  {name:"メガギャラドス", role:"バランス"},
+  {name:"ギルガルド", role:"バランス"},
+  {name:"グレイシア", role:"アタック"},
+  {name:"グレンアルマ", role:"アタック"},
+  {name:"ゲッコウガ", role:"アタック"},
+  {name:"ゲンガー", role:"スピード"},
+  {name:"コダック", role:"サポート"},
+  {name:"サンダー", role:"アタック"},
+  {name:"サーナイト", role:"アタック"},
+  {name:"ザシアン", role:"バランス"},
+  {name:"シャワーズ", role:"ディフェンス"},
+  {name:"シャンデラ", role:"アタック"},
+  {name:"ジュナイパー", role:"アタック"},
+  {name:"ジュラルドン", role:"アタック"},
+  {name:"スイクン", role:"バランス"},
+  {name:"ゼラオラ", role:"スピード"},
+  {name:"ソウブレイズ", role:"バランス"},
+  {name:"ゾロアーク", role:"スピード"},
+  {name:"タイレーツ", role:"バランス"},
+  {name:"ダダリン", role:"バランス"},
+  {name:"ダークライ", role:"スピード"},
+  {name:"デカヌチャン", role:"バランス"},
+  {name:"ドラパルト", role:"アタック"},
+  {name:"ドードリオ", role:"スピード"},
+  {name:"ニャース", role:"スピード"},
+  {name:"ニンフィア", role:"アタック"},
+  {name:"ヌメルゴン", role:"ディフェンス"},
+  {name:"ネギガナイト", role:"バランス"},
+  {name:"ハッサム", role:"バランス"},
+  {name:"ハピナス", role:"サポート"},
+  {name:"バクフーン", role:"アタック"},
+  {name:"バシャーモ", role:"バランス"},
+  {name:"バリヤード", role:"サポート"},
+  {name:"バンギラス", role:"バランス"},
+  {name:"パーモット", role:"バランス"},
+  {name:"ピカチュウ", role:"アタック"},
+  {name:"ピクシー", role:"サポート"},
+  {name:"ファイアロー", role:"スピード"},
+  {name:"ファイヤー", role:"バランス"},
+  {name:"フシギバナ", role:"アタック"},
+  {name:"フリーザー", role:"ディフェンス"},
+  {name:"フーパ", role:"サポート"},
+  {name:"ブラッキー", role:"ディフェンス"},
+  {name:"プクリン", role:"サポート"},
+  {name:"ホウオウ", role:"ディフェンス"},
+  {name:"マスカーニャ", role:"スピード"},
+  {name:"マッシブーン", role:"バランス"},
+  {name:"マフォクシー", role:"アタック"},
+  {name:"マホイップ", role:"サポート"},
+  {name:"マリルリ", role:"バランス"},
+  {name:"マンムー", role:"ディフェンス"},
+  {name:"ミミッキュ", role:"バランス"},
+  {name:"ミュウ", role:"アタック"},
+  {name:"ミュウツーX", role:"バランス"},
+  {name:"ミュウツーY", role:"アタック"},
+  {name:"ミライドン", role:"アタック"},
+  {name:"メタグロス", role:"バランス"},
+  {name:"ヤドラン", role:"ディフェンス"},
+  {name:"ヤミラミ", role:"サポート"},
+  {name:"ヨクバリス", role:"ディフェンス"},
+  {name:"ラティアス", role:"サポート"},
+  {name:"ラティオス", role:"アタック"},
+  {name:"ラプラス", role:"ディフェンス"},
+  {name:"リザードン", role:"バランス"},
+  {name:"メガリザードンX", role:"バランス"},
+  {name:"メガリザードンY", role:"バランス"},
+  {name:"リーフィア", role:"スピード"},
+  {name:"ルカリオ", role:"バランス"},
+  {name:"メガルカリオ", role:"バランス"},
+  {name:"ワタシラガ", role:"サポート"}
+]
+
+let roles = ["All", "アタック", "スピード", "バランス", "ディフェンス", "サポート"]
+let currentRole = "All"
+let searchText = ""
+
+let bansA = []
+let bansB = []
+let picksA = []
+let picksB = []
+let playersA = []
+let playersB = []
+
+let currentTeam = "A"
+let joinTeam = null
+let turn = "A"
+let pickCount = 0
+let selectedPick = null
+
+let pickOrder = [
+  {team:"A", player:0},
+  {team:"B", player:0},
+  {team:"A", player:1},
+  {team:"B", player:1},
+  {team:"A", player:2},
+  {team:"B", player:2}
+]
+
+function roomRef(){
+  return db.ref("rooms/" + roomId)
+}
+
+function syncState(){
+  if(!roomId) return
+  roomRef().update({
+    phase,
+    timer,
+    bansA,
+    bansB,
+    picksA,
+    picksB,
+    playersA,
+    playersB,
+    turn,
+    pickCount
+  })
+}
+
+function listenRoom(){
+  if(listening) return
+  listening = true
+
+  roomRef().on("value", snapshot => {
+    let data = snapshot.val()
+    if(!data) return
+
+    let oldPhase = phase
+
+    phase = data.phase || "waiting"
+    timer = data.timer ?? 0
+    bansA = data.bansA || []
+    bansB = data.bansB || []
+    picksA = data.picksA || []
+    picksB = data.picksB || []
+    playersA = data.playersA || []
+    playersB = data.playersB || []
+    turn = data.turn || "A"
+    pickCount = data.pickCount || 0
+
+    updateMyPlayerIndex()
+    renderAll()
+
+    if(phase !== oldPhase){
+      handleRemotePhaseEffect()
+    }
+  })
+}
+
+function updateMyPlayerIndex(){
+  const list = currentTeam === "A" ? playersA : playersB
+  myPlayerIndex = list.indexOf(myId)
+}
+
+function joinTeamSlot(team){
+  const key = team === "A" ? "playersA" : "playersB"
+
+  return roomRef().child(key).transaction(list => {
+    list = list || []
+    if(list.includes(myId)) return list
+    if(list.length >= 3) return
+    list.push(myId)
+    return list
+  }).then(result => {
+    if(!result.committed){
+      alert("このチームは満員です")
+      return false
+    }
+    return true
+  })
+}
+
+function handleRemotePhaseEffect(){
+  if(phase === "ban" && lastPopupPhase !== "ban"){
+    lastPopupPhase = "ban"
+    showPopup(`<div class="popupTitle">BANピック</div>`)
+  }
+
+  if(phase === "banReveal" && lastPopupPhase !== "banReveal"){
+    lastPopupPhase = "banReveal"
+    showBanRevealPopup()
+  }
+}
+
+function createRoom(){
+  generateRoomId()
+  currentTeam = "A"
+  isHost = true
+
+  phase = "waiting"
+  timer = 0
+  bansA = []
+  bansB = []
+  picksA = []
+  picksB = []
+  playersA = [myId]
+  playersB = []
+  turn = "A"
+  pickCount = 0
+  selectedPick = null
+  myPlayerIndex = 0
+
+  document.getElementById("homeScreen").classList.add("hidden")
+  document.getElementById("gameScreen").classList.remove("hidden")
+
+  roomRef().set({
+    phase,
+    timer,
+    bansA,
+    bansB,
+    picksA,
+    picksB,
+    playersA,
+    playersB,
+    turn,
+    pickCount
+  }).then(() => {
+    listenRoom()
+    renderAll()
+  })
+}
+
+function showJoinScreen(){
+  document.getElementById("homeScreen").classList.add("hidden")
+  document.getElementById("joinScreen").classList.remove("hidden")
+}
+
+function backHome(){
+  document.getElementById("joinScreen").classList.add("hidden")
+  document.getElementById("homeScreen").classList.remove("hidden")
+}
+
+function selectJoinTeam(team){
+  joinTeam = team
+  document.getElementById("joinTeamA").classList.remove("selectedTeam")
+  document.getElementById("joinTeamB").classList.remove("selectedTeam")
+  document.getElementById(`joinTeam${team}`).classList.add("selectedTeam")
+  document.getElementById("selectedJoinTeam").innerText = team + "チームを選択中"
+  checkJoinReady()
+}
+
+function checkJoinReady(){
+  let inputId = document.getElementById("joinRoomId").value.trim()
+  document.getElementById("loginButton").disabled = !(inputId && joinTeam)
+}
+
+document.getElementById("joinRoomId").addEventListener("input", checkJoinReady)
+
+function joinRoom(){
+  roomId = document.getElementById("joinRoomId").value.trim()
+  currentTeam = joinTeam
+  isHost = false
+
+  roomRef().once("value").then(snapshot => {
+    if(!snapshot.exists()){
+      alert("ロビーが見つかりません")
+      return
+    }
+
+    joinTeamSlot(currentTeam).then(ok => {
+      if(!ok) return
+
+      document.getElementById("roomId").innerText = "ロビーID：" + roomId
+      document.getElementById("joinScreen").classList.add("hidden")
+      document.getElementById("gameScreen").classList.remove("hidden")
+      listenRoom()
+      renderAll()
+    })
+  })
+}
+
+function generateRoomId(){
+  let chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+  roomId = ""
+  for(let i = 0; i < 5; i++){
+    roomId += chars[Math.floor(Math.random() * chars.length)]
+  }
+  document.getElementById("roomId").innerText = "ロビーID：" + roomId
+}
+
+function copyRoomId(){
+  navigator.clipboard.writeText(roomId)
+  alert("ロビーIDをコピーしました：" + roomId)
+}
+
+function updateUI(){
+  document.getElementById("phase").innerText = phase
+  document.getElementById("timer").innerText = timer
+
+  const seat = myPlayerIndex >= 0
+    ? `あなた：チーム${currentTeam} Player${myPlayerIndex + 1}`
+    : `あなた：チーム${currentTeam}`
+
+  document.getElementById("mySeat").innerText = seat
+}
+
+function showPopup(content, ms = 1500){
+  const popup = document.getElementById("popup")
+  popup.innerHTML = `<div class="popupContent">${content}</div>`
+  popup.classList.remove("hidden")
+  setTimeout(() => popup.classList.add("hidden"), ms)
+}
+
+function showToast(text, ms = 800){
+  const toast = document.getElementById("toast")
+  toast.innerHTML = text
+  toast.classList.remove("hidden")
+  setTimeout(() => toast.classList.add("hidden"), ms)
+}
+
+function startCountdown(){
+  if(!isHost) return
+  phase = "countdown"
+  timer = 10
+  renderAll()
+  syncState()
+  runTimer(() => startBan())
+}
+
+function startBan(){
+  phase = "ban"
+  timer = 20
+  showPopup(`<div class="popupTitle">BANピック</div>`)
+  renderAll()
+  syncState()
+  runTimer(() => revealBan())
+}
+
+function revealBan(){
+  phase = "banReveal"
+  renderAll()
+  syncState()
+  showBanRevealPopup()
+
+  setTimeout(() => {
+    if(isHost){
+      startPick()
+    }
+  }, 3000)
+}
+
+function showBanRevealPopup(){
+  const aBans = bansA.length ? bansA : ["なし"]
+  const bBans = bansB.length ? bansB : ["なし"]
+
+  let rows = ""
+  for(let i = 0; i < 5; i++){
+    rows += `<div>${aBans[i] || ""}</div><div>${bBans[i] || ""}</div>`
+  }
+
+  showPopup(`
+    <div class="popupTitle">BAN結果</div>
+    <div class="banReveal">
+      <h3>Aチーム</h3>
+      <h3>Bチーム</h3>
+      ${rows}
+    </div>
+  `, 3000)
+}
+
+function startPick(){
+  phase = "pick"
+  timer = 15
+  pickCount = 0
+  turn = "A"
+  selectedPick = null
+  renderAll()
+  syncState()
+  runTimer(() => autoPick())
+}
+
+function endGame(){
+  phase = "result"
+  timer = 0
+  selectedPick = null
+  renderAll()
+  syncState()
+}
+
+function runTimer(callback){
+  clearInterval(interval)
+
+  interval = setInterval(() => {
+    timer--
+    updateUI()
+    syncState()
+
+    if(timer <= 0){
+      clearInterval(interval)
+      callback()
+    }
+  }, 1000)
+}
+
+function renderAll(){
+  updateUI()
+  renderTeams()
+  renderFilters()
+  renderPokemon()
+  renderPickControl()
+}
+
+function renderTeams(){
+  renderTeam("A")
+  renderTeam("B")
+}
+
+function playerJoined(team, index){
+  const list = team === "A" ? playersA : playersB
+  return !!list[index]
+}
+
+function renderTeam(team){
+  const area = document.getElementById(team === "A" ? "teamA" : "teamB")
+  let bans = team === "A" ? bansA : bansB
+  let picks = team === "A" ? picksA : picksB
+
+  let html = `<h3>チーム${team}</h3>`
+
+  let banHtml = ""
+  if(phase === "ban" && team !== currentTeam){
+    banHtml = "<div>非公開</div>"
+  } else {
+    banHtml = bans.length ? bans.map(b => `<div>${b}</div>`).join("") : "<div>なし</div>"
+  }
+
+  html += `
+    <div class="player banBox">
+      <div>BAN</div>
+      <div class="banList">${banHtml}</div>
+    </div>
+  `
+
+  for(let i = 0; i < 3; i++){
+    let isActive = phase === "pick" && pickOrder[pickCount] &&
+      pickOrder[pickCount].team === team && pickOrder[pickCount].player === i
+
+    let isMe = currentTeam === team && myPlayerIndex === i
+    let picked = picks[i] || "未選択"
+    let joined = playerJoined(team, i) ? "参加済み" : "未参加"
+
+    html += `
+      <div class="player ${isActive ? "active" : ""} ${isMe ? "myTurn" : ""}">
+        <div>Player ${i + 1}</div>
+        <div>${joined}</div>
+        <strong>${picked}</strong>
+        ${isActive ? "<div>選択中！</div>" : ""}
+      </div>
+    `
+  }
+
+  area.innerHTML = html
+}
+
+function renderFilters(){
+  let html = ""
+  roles.forEach(role => {
+    html += `
+      <button class="${currentRole === role ? "selectedRole" : ""}" onclick="setRole('${role}')">
+        ${role}
+      </button>
+    `
+  })
+  document.getElementById("roleFilters").innerHTML = html
+}
+
+function setRole(role){
+  currentRole = role
+  renderAll()
+}
+
+function setSearchText(){
+  searchText = document.getElementById("searchInput").value.trim()
+  renderPokemon()
+}
+
+function renderPokemon(){
+  let html = ""
+
+  let filtered = pokemon.filter(p => {
+    let roleMatch = currentRole === "All" || p.role === currentRole
+    let nameMatch = p.name.includes(searchText)
+    return roleMatch && nameMatch
+  })
+
+  filtered.forEach(p => {
+    let name = p.name
+    let isBlocked = false
+
+    if(phase === "ban"){
+      if(currentTeam === "A"){
+        isBlocked = bansA.includes(name)
+      } else {
+        isBlocked = bansB.includes(name)
+      }
+    } else {
+      isBlocked =
+        bansA.includes(name) ||
+        bansB.includes(name) ||
+        picksA.includes(name) ||
+        picksB.includes(name)
+    }
+
+    let isSelected = selectedPick === name
+    let style = ""
+
+    if(isBlocked) style += "opacity:0.25;"
+    if(isSelected) style += "outline:3px solid yellow;"
+
+    let action = ""
+    if(phase === "ban") action = `selectBan("${name}")`
+    if(phase === "pick") action = `choosePick("${name}")`
+
+    html += `<button class="role-${p.role}" style="${style}" onclick='${action}'>${name}</button>`
+  })
+
+  if(filtered.length === 0){
+    html = `<div>該当キャラなし</div>`
+  }
+
+  document.getElementById("pokemonList").innerHTML = html
+}
+
+function renderPickControl(){
+  let html = ""
+
+  if(phase === "pick"){
+    const current = pickOrder[pickCount]
+    const isMyPick = current && current.team === currentTeam && current.player === myPlayerIndex
+
+    html = `
+      <div>現在のターン：チーム${turn} Player${current.player + 1}</div>
+      <div>${isMyPick ? "あなたの番です" : "待機中"}</div>
+      <div class="bigPick ${selectedPick ? "selected" : ""}">
+        ${selectedPick || "未選択"}
+      </div>
+      <button onclick="confirmPick()" ${isMyPick ? "" : "disabled"}>決定</button>
+    `
+  }
+
+  document.getElementById("pickControl").innerHTML = html
+}
+
+function selectBan(name){
+  if(phase !== "ban") return
+
+  let bans = currentTeam === "A" ? bansA : bansB
+
+  if(bans.includes(name)){
+    if(currentTeam === "A"){
+      bansA = bansA.filter(b => b !== name)
+    } else {
+      bansB = bansB.filter(b => b !== name)
+    }
+    showToast(`${name} BAN解除`)
+  } else {
+    if(bans.length >= 5) return
+    bans.push(name)
+    showToast(`${name} BAN`)
+  }
+
+  renderAll()
+  syncState()
+}
+
+function choosePick(name){
+  if(phase !== "pick") return
+
+  const current = pickOrder[pickCount]
+  if(!current) return
+  if(current.team !== currentTeam) return
+  if(current.player !== myPlayerIndex) return
+  if(bansA.includes(name) || bansB.includes(name) || picksA.includes(name) || picksB.includes(name)) return
+
+  selectedPick = name
+  renderAll()
+}
+
+function confirmPick(){
+  if(phase !== "pick") return
+
+  const current = pickOrder[pickCount]
+  if(!current) return
+  if(current.team !== currentTeam) return
+  if(current.player !== myPlayerIndex) return
+  if(!selectedPick) return
+
+  if(current.team === "A"){
+    picksA[current.player] = selectedPick
+  } else {
+    picksB[current.player] = selectedPick
+  }
+
+  selectedPick = null
+  nextTurn()
+}
+
+function nextTurn(){
+  clearInterval(interval)
+
+  pickCount++
+
+  if(pickCount >= 6){
+    endGame()
+    return
+  }
+
+  turn = pickOrder[pickCount].team
+  timer = 15
+  selectedPick = null
+
+  renderAll()
+  syncState()
+
+  if(isHost){
+    runTimer(() => autoPick())
+  }
+}
+
+function autoPick(){
+  const current = pickOrder[pickCount]
+  if(!current) return
+
+  let available = pokemon
+    .map(p => p.name)
+    .filter(name => !bansA.includes(name) && !bansB.includes(name) && !picksA.includes(name) && !picksB.includes(name))
+
+  if(available.length === 0){
+    endGame()
+    return
+  }
+
+  const randomPick = available[Math.floor(Math.random() * available.length)]
+
+  if(current.team === "A"){
+    picksA[current.player] = randomPick
+  } else {
+    picksB[current.player] = randomPick
+  }
+
+  nextTurn()
+}
+
+renderAll()
+</script>
+
+</body>
+</html>
