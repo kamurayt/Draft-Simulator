@@ -2,38 +2,36 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>ドラフトシミュレーター</title>
-
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
 <style>
-body{margin:0;background:#0b1020;color:white;font-family:sans-serif;text-align:center}
-button{margin:5px;padding:10px 14px;border-radius:10px;border:none;font-weight:bold}
-button:disabled{opacity:.4}
-input,select{padding:10px;border-radius:10px;border:none;margin:8px;font-weight:bold}
+body{margin:0;background:#080d1a;color:white;font-family:sans-serif;text-align:center}
+button{margin:4px;padding:9px 12px;border-radius:10px;border:none;font-weight:bold}
+button:disabled{opacity:.35}
+input,select{padding:10px;border-radius:10px;border:none;margin:7px;font-weight:bold}
 .hidden{display:none!important}
 .screen{min-height:100vh;padding:30px 15px}
-h1{font-size:42px;margin-top:70px}
+h1{font-size:38px;margin-top:70px}
 .ruleBox{max-width:320px;margin:15px auto;display:flex;justify-content:space-between;align-items:center;font-size:20px}
 .selectedTeam,.selectedRole{background:yellow!important;color:black!important}
-.top{padding:8px;background:#0b1020;border-bottom:1px solid #26304a;position:sticky;top:0;z-index:5}
-.layout{display:grid;grid-template-columns:1fr 2.2fr 1fr;gap:6px;padding:6px;height:calc(100vh - 120px)}
+.top{padding:8px;background:#080d1a;border-bottom:1px solid #26304a;position:sticky;top:0;z-index:5}
+.layout{display:grid;grid-template-columns:.85fr 2.3fr .85fr;gap:5px;padding:5px;height:calc(100vh - 120px)}
 .team{display:flex;flex-direction:column;gap:6px}
-.player{border:2px solid #444;border-radius:10px;background:#151b2e;padding:7px 3px;font-size:11px;min-height:50px}
+.player{border:2px solid #444;border-radius:10px;background:#141b2f;padding:7px 3px;font-size:11px;min-height:50px}
 .me{border-color:#5ecbff;box-shadow:0 0 12px #5ecbff}
 .ready{border-color:#6dff91}
 .active{border-color:yellow!important;box-shadow:0 0 15px yellow!important}
 .banBox{background:#202846}
-.centerBox{border:2px solid #334;border-radius:12px;background:#10172a;padding:6px;display:flex;flex-direction:column;min-height:0}
-.filters{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}
+.centerBox{border:2px solid #334;border-radius:14px;background:#10172a;padding:6px;display:flex;flex-direction:column;min-height:0}
+.filters{display:flex;flex-wrap:wrap;justify-content:center;gap:3px}
 .filters button{font-size:10px;padding:6px}
-.searchInput{width:90%;margin:5px auto}
-.pokemonScroll{flex:1;overflow-y:auto;border:1px solid #2f3a5a;border-radius:10px;padding:6px;display:flex;flex-wrap:wrap;justify-content:center;align-content:flex-start;gap:6px}
-.pokemonScroll button{width:82px;min-height:92px;font-size:10px;padding:5px 3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
-.pokemonScroll img{width:48px;height:48px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,.12)}
-.pokeName{line-height:1.15}
+.searchInput{width:92%;margin:5px auto}
+.pokemonScroll{flex:1;overflow-y:auto;border:1px solid #2f3a5a;border-radius:12px;padding:6px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;align-content:start}
+.pokemonScroll button{width:100%;min-height:76px;font-size:9px;padding:4px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.pokemonScroll img{width:42px;height:42px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,.1)}
+.pokeName{line-height:1.1}
 .role-アタック{background:#ff5c5c;color:white}
 .role-バランス{background:#b76cff;color:white}
 .role-スピード{background:#4db8ff;color:white}
@@ -41,18 +39,14 @@ h1{font-size:42px;margin-top:70px}
 .role-サポート{background:#ffe45c;color:black}
 .pickControl{border-top:1px solid #2f3a5a;margin-top:6px;padding-top:6px;font-size:13px}
 .bigPick{background:#1f2a44;border-radius:12px;padding:10px;margin:5px;font-size:17px;font-weight:bold}
-.popup,.toast{position:fixed;z-index:100}
-.popup{inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center}
+.popup{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;display:flex;align-items:center;justify-content:center}
 .popupContent{background:#142456;border:3px solid #5ecbff;border-radius:16px;padding:25px}
 .popupTitle{font-size:26px;font-weight:bold}
-.toast{left:50%;top:18%;transform:translateX(-50%);background:#101735;border:2px solid #9ee7ff;border-radius:14px;padding:12px 20px;font-weight:bold}
 </style>
 </head>
-
 <body>
 
 <div id="popup" class="popup hidden"></div>
-<div id="toast" class="toast hidden"></div>
 
 <div id="homeScreen" class="screen">
   <h1>ドラフトシミュレーター</h1>
@@ -84,8 +78,8 @@ h1{font-size:42px;margin-top:70px}
 
 <div id="gameScreen" class="hidden">
   <div class="top">
-    <div><span id="roomId">ロビーID：-----</span> <button onclick="copyRoomId()">コピー</button></div>
-    <div><span id="phase">waiting</span>　<span id="timer">0</span></div>
+    <div><span id="roomIdText">ロビーID：-----</span> <button onclick="copyRoomId()">コピー</button></div>
+    <div><span id="phaseText">waiting</span>　<span id="timerText">0</span></div>
     <div id="mySeat">あなた：未参加</div>
   </div>
 
@@ -111,12 +105,11 @@ const firebaseConfig={
   messagingSenderId:"1064568783811",
   appId:"1:1064568783811:web:4176e95cf2ed8f5b437376"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
 let roomId="",phase="waiting",timer=0,interval=null,listening=false,isHost=false;
-let currentTeam="",joinTeam="",myPlayerIndex=-1,turn="A",pickCount=0,selectedPick=null;
+let currentTeam="",joinTeam="",myPlayerIndex=-1,pickCount=0,selectedPick=null;
 let settings={teamSize:3,mode:"normal",banCount:5,matchType:"BO1"};
 let playersA=[],playersB=[],readyA=[],readyB=[],bansA=[],bansB=[],picksA=[],picksB=[],pickOrder=[];
 let currentRole="All",searchText="";
@@ -124,81 +117,96 @@ let currentRole="All",searchText="";
 let myId=localStorage.getItem("uniteDraftMyId");
 if(!myId){myId=Math.random().toString(36).slice(2,11);localStorage.setItem("uniteDraftMyId",myId);}
 
-const img=n=>`img/${n}.png`;
-
 const pokemon=[
-{name:"アブソル",kana:"あぶそる",role:"スピード",img:img("absol")},
-{name:"アマージョ",kana:"あまーじょ",role:"バランス",img:img("tsareena")},
-{name:"アローラキュウコン",kana:"あろーらきゅうこん",role:"アタック",img:img("alolan-ninetales")},
-{name:"イワパレス",kana:"いわぱれす",role:"ディフェンス",img:img("crustle")},
-{name:"インテレオン",kana:"いんてれおん",role:"アタック",img:img("inteleon")},
-{name:"ウッウ",kana:"うっう",role:"アタック",img:img("cramorant")},
-{name:"ウーラオス",kana:"うーらおす",role:"バランス",img:img("urshifu")},
-{name:"エースバーン",kana:"えーすばーん",role:"アタック",img:img("cinderace")},
-{name:"エーフィ",kana:"えーふぃ",role:"アタック",img:img("espeon")},
-{name:"オーロット",kana:"おーろっと",role:"ディフェンス",img:img("trevenant")},
-{name:"カイリキー",kana:"かいりきー",role:"バランス",img:img("machamp")},
-{name:"カイリュー",kana:"かいりゅー",role:"バランス",img:img("dragonite")},
-{name:"カビゴン",kana:"かびごん",role:"ディフェンス",img:img("snorlax")},
-{name:"カメックス",kana:"かめっくす",role:"ディフェンス",img:img("blastoise")},
-{name:"ガブリアス",kana:"がぶりあす",role:"バランス",img:img("garchomp")},
-{name:"ガラルギャロップ",kana:"がらるぎゃろっぷ",role:"スピード",img:img("galarian-rapidash")},
-{name:"キュワワー",kana:"きゅわわー",role:"サポート",img:img("comfey")},
-{name:"ギャラドス",kana:"ぎゃらどす",role:"バランス",img:img("gyarados")},
-{name:"ギルガルド",kana:"ぎるがるど",role:"バランス",img:img("aegislash")},
-{name:"グレイシア",kana:"ぐれいしあ",role:"アタック",img:img("glaceon")},
-{name:"グレンアルマ",kana:"ぐれんあるま",role:"アタック",img:img("armarouge")},
-{name:"ゲッコウガ",kana:"げっこうが",role:"アタック",img:img("greninja")},
-{name:"ゲンガー",kana:"げんがー",role:"スピード",img:img("gengar")},
-{name:"コダック",kana:"こだっく",role:"サポート",img:img("psyduck")},
-{name:"サーナイト",kana:"さーないと",role:"アタック",img:img("gardevoir")},
-{name:"サンダー",kana:"さんだー",role:"アタック",img:img("zapdos")},
-{name:"ザシアン",kana:"ざしあん",role:"バランス",img:img("zacian")},
-{name:"シャワーズ",kana:"しゃわーず",role:"ディフェンス",img:img("vaporeon")},
-{name:"シャンデラ",kana:"しゃんでら",role:"アタック",img:img("chandelure")},
-{name:"ジュナイパー",kana:"じゅないぱー",role:"アタック",img:img("decidueye")},
-{name:"ジュラルドン",kana:"じゅらるどん",role:"アタック",img:img("duraludon")},
-{name:"スイクン",kana:"すいくん",role:"バランス",img:img("suicune")},
-{name:"ゼラオラ",kana:"ぜらおら",role:"スピード",img:img("zeraora")},
-{name:"ソウブレイズ",kana:"そうぶれいず",role:"バランス",img:img("ceruledge")},
-{name:"ゾロアーク",kana:"ぞろあーく",role:"スピード",img:img("zoroark")},
-{name:"ダークライ",kana:"だーくらい",role:"スピード",img:img("darkrai")},
-{name:"ドラパルト",kana:"どらぱると",role:"アタック",img:img("dragapult")},
-{name:"ドードリオ",kana:"どーどりお",role:"スピード",img:img("dodrio")},
-{name:"ニンフィア",kana:"にんふぃあ",role:"アタック",img:img("sylveon")},
-{name:"ヌメルゴン",kana:"ぬめるごん",role:"ディフェンス",img:img("goodra")},
-{name:"ハッサム",kana:"はっさむ",role:"バランス",img:img("scizor")},
-{name:"ハピナス",kana:"はぴなす",role:"サポート",img:img("blissey")},
-{name:"バシャーモ",kana:"ばしゃーも",role:"バランス",img:img("blaziken")},
-{name:"バンギラス",kana:"ばんぎらす",role:"バランス",img:img("tyranitar")},
+{name:"アブソル",kana:"あぶそる",role:"スピード",img:"img/absol.png"},
+{name:"アマージョ",kana:"あまーじょ",role:"バランス",img:"img/tsareena.png"},
+{name:"アローラキュウコン",kana:"あろーらきゅうこん",role:"アタック",img:"img/alolan-ninetales.webp"},
+{name:"アローラライチュウ",kana:"あろーららいちゅう",role:"アタック",img:"img/raichu-alola.webp"},
+{name:"インテレオン",kana:"いんてれおん",role:"アタック",img:"img/inteleon.webp"},
+{name:"ウッウ",kana:"うっう",role:"アタック",img:"img/cramorant.webp"},
+{name:"ウーラオス",kana:"うーらおす",role:"バランス",img:"img/urshifu.webp"},
+{name:"エースバーン",kana:"えーすばーん",role:"アタック",img:"img/cinderace.png"},
+{name:"エーフィ",kana:"えーふぃ",role:"アタック",img:"img/espeon.png"},
+{name:"エンペルト",kana:"えんぺると",role:"バランス",img:"img/empoleon.webp"},
+{name:"オーロット",kana:"おーろっと",role:"ディフェンス",img:"img/trevenant.webp"},
+{name:"カイリキー",kana:"かいりきー",role:"バランス",img:"img/machamp.png"},
+{name:"カイリュー",kana:"かいりゅー",role:"バランス",img:"img/dragonite.png"},
+{name:"カビゴン",kana:"かびごん",role:"ディフェンス",img:"img/snorlax.png"},
+{name:"カメックス",kana:"かめっくす",role:"ディフェンス",img:"img/blastoise.webp"},
+{name:"ガブリアス",kana:"がぶりあす",role:"バランス",img:"img/garchomp.png"},
+{name:"ガラルギャロップ",kana:"がらるぎゃろっぷ",role:"スピード",img:"img/rapidash-galar.webp"},
+{name:"キュワワー",kana:"きゅわわー",role:"サポート",img:"img/comfey.png"},
+{name:"ギャラドス",kana:"ぎゃらどす",role:"バランス",img:"img/gyarados.png"},
+{name:"メガギャラドス",kana:"めがぎゃらどす",role:"バランス",img:"img/gyarados-mega.webp"},
+{name:"ギルガルド",kana:"ぎるがるど",role:"バランス",img:"img/aegislash.webp"},
+{name:"グレイシア",kana:"ぐれいしあ",role:"アタック",img:"img/glaceon.png"},
+{name:"グレンアルマ",kana:"ぐれんあるま",role:"アタック",img:"img/armarouge.png"},
+{name:"ゲッコウガ",kana:"げっこうが",role:"アタック",img:"img/greninja.png"},
+{name:"ゲンガー",kana:"げんがー",role:"スピード",img:"img/gengar.webp"},
+{name:"コダック",kana:"こだっく",role:"サポート",img:"img/psyduck.webp"},
+{name:"サンダー",kana:"さんだー",role:"アタック",img:"img/zapdos.png"},
+{name:"サーナイト",kana:"さーないと",role:"アタック",img:"img/gardevoir.png"},
+{name:"ザシアン",kana:"ざしあん",role:"バランス",img:"img/zacian.webp"},
+{name:"シャワーズ",kana:"しゃわーず",role:"ディフェンス",img:"img/vaporeon.webp"},
+{name:"シャンデラ",kana:"しゃんでら",role:"アタック",img:"img/chandelure.png"},
+{name:"ジュナイパー",kana:"じゅないぱー",role:"アタック",img:"img/decidueye.png"},
+{name:"ジュラルドン",kana:"じゅらるどん",role:"アタック",img:"img/duraludon.png"},
+{name:"スイクン",kana:"すいくん",role:"バランス",img:"img/suicune.png"},
+{name:"ゼラオラ",kana:"ぜらおら",role:"スピード",img:"img/zeraora.png"},
+{name:"ソウブレイズ",kana:"そうぶれいず",role:"バランス",img:"img/ceruledge.webp"},
+{name:"ゾロアーク",kana:"ぞろあーく",role:"スピード",img:"img/zoroark.png"},
+{name:"タイレーツ",kana:"たいれーつ",role:"バランス",img:"img/falinks.webp"},
+{name:"ダークライ",kana:"だーくらい",role:"スピード",img:"img/darkrai.webp"},
+{name:"ダダリン",kana:"だだりん",role:"バランス",img:"img/dhelmise.webp"},
+{name:"デカヌチャン",kana:"でかぬちゃん",role:"バランス",img:"img/tinkaton.webp"},
+{name:"ドラパルト",kana:"どらぱると",role:"アタック",img:"img/dragapult.png"},
+{name:"ドードリオ",kana:"どーどりお",role:"スピード",img:"img/dodrio.png"},
+{name:"ニャース",kana:"にゃーす",role:"スピード",img:"img/meowth.webp"},
+{name:"ニンフィア",kana:"にんふぃあ",role:"アタック",img:"img/sylveon.png"},
+{name:"ヌメルゴン",kana:"ぬめるごん",role:"ディフェンス",img:"img/goodra.webp"},
+{name:"ネギガナイト",kana:"ねぎがないと",role:"バランス",img:"img/sirfetchd.webp"},
+{name:"ハッサム",kana:"はっさむ",role:"バランス",img:"img/scizor.png"},
+{name:"ハピナス",kana:"はぴなす",role:"サポート",img:"img/blissey.webp"},
+{name:"バクフーン",kana:"ばくふーん",role:"アタック",img:"img/typhlosion.png"},
+{name:"バシャーモ",kana:"ばしゃーも",role:"バランス",img:"img/blaziken.png"},
+{name:"バリヤード",kana:"ばりやーど",role:"サポート",img:"img/mr-mime.png"},
+{name:"バンギラス",kana:"ばんぎらす",role:"バランス",img:"img/tyranitar.webp"},
+{name:"パーモット",kana:"ぱーもっと",role:"バランス",img:"img/pawmot.webp"},
 {name:"ピカチュウ",kana:"ぴかちゅう",role:"アタック",img:"img/pikachu.webp"},
-{name:"ピクシー",kana:"ぴくしー",role:"サポート",img:img("clefable")},
-{name:"ファイアロー",kana:"ふぁいあろー",role:"スピード",img:img("talonflame")},
-{name:"ファイヤー",kana:"ふぁいやー",role:"バランス",img:img("moltres")},
-{name:"フシギバナ",kana:"ふしぎばな",role:"アタック",img:img("venusaur")},
-{name:"フリーザー",kana:"ふりーざー",role:"ディフェンス",img:img("articuno")},
-{name:"フーパ",kana:"ふーぱ",role:"サポート",img:img("hoopa")},
-{name:"ブラッキー",kana:"ぶらっきー",role:"ディフェンス",img:img("umbreon")},
-{name:"プクリン",kana:"ぷくりん",role:"サポート",img:img("wigglytuff")},
-{name:"ホウオウ",kana:"ほうおう",role:"ディフェンス",img:img("ho-oh")},
-{name:"マスカーニャ",kana:"ますかーにゃ",role:"スピード",img:img("meowscarada")},
-{name:"マッシブーン",kana:"まっしぶーん",role:"バランス",img:img("buzzwole")},
-{name:"マフォクシー",kana:"まふぉくしー",role:"アタック",img:img("delphox")},
-{name:"マリルリ",kana:"まりるり",role:"バランス",img:img("azumarill")},
-{name:"マンムー",kana:"まんむー",role:"ディフェンス",img:img("mamoswine")},
-{name:"ミミッキュ",kana:"みみっきゅ",role:"バランス",img:img("mimikyu")},
-{name:"ミュウ",kana:"みゅう",role:"アタック",img:img("mew")},
-{name:"ミュウツーX",kana:"みゅうつーえっくす",role:"バランス",img:img("mewtwo-x")},
-{name:"ミュウツーY",kana:"みゅうつーわい",role:"アタック",img:img("mewtwo-y")},
-{name:"ミライドン",kana:"みらいどん",role:"アタック",img:img("miraidon")},
-{name:"メタグロス",kana:"めたぐろす",role:"バランス",img:img("metagross")},
-{name:"ヤドラン",kana:"やどらん",role:"ディフェンス",img:img("slowbro")},
-{name:"ヤミラミ",kana:"やみらみ",role:"サポート",img:img("sableye")},
-{name:"ラプラス",kana:"らぷらす",role:"ディフェンス",img:img("lapras")},
-{name:"リザードン",kana:"りざーどん",role:"バランス",img:img("charizard")},
-{name:"リーフィア",kana:"りーふぃあ",role:"スピード",img:img("leafeon")},
-{name:"ルカリオ",kana:"るかりお",role:"バランス",img:img("lucario")},
-{name:"ワタシラガ",kana:"わたしらが",role:"サポート",img:img("eldegoss")}
+{name:"ピクシー",kana:"ぴくしー",role:"サポート",img:"img/clefable.webp"},
+{name:"ファイアロー",kana:"ふぁいあろー",role:"スピード",img:"img/talonflame.webp"},
+{name:"ファイヤー",kana:"ふぁいやー",role:"バランス",img:"img/moltres.webp"},
+{name:"フシギバナ",kana:"ふしぎばな",role:"アタック",img:"img/venusaur.png"},
+{name:"フリーザー",kana:"ふりーざー",role:"ディフェンス",img:"img/articuno.webp"},
+{name:"フーパ",kana:"ふーぱ",role:"サポート",img:"img/hoopa.webp"},
+{name:"ブラッキー",kana:"ぶらっきー",role:"ディフェンス",img:"img/umbreon.webp"},
+{name:"プクリン",kana:"ぷくりん",role:"サポート",img:"img/wigglytuff.webp"},
+{name:"ホウオウ",kana:"ほうおう",role:"ディフェンス",img:"img/ho-oh.webp"},
+{name:"マスカーニャ",kana:"ますかーにゃ",role:"スピード",img:"img/meowscarada.png"},
+{name:"マッシブーン",kana:"まっしぶーん",role:"バランス",img:"img/buzzwole.webp"},
+{name:"マフォクシー",kana:"まふぉくしー",role:"アタック",img:"img/delphox.png"},
+{name:"マホイップ",kana:"まほいっぷ",role:"サポート",img:"img/alcremie.webp"},
+{name:"マリルリ",kana:"まりるり",role:"バランス",img:"img/azumarill.png"},
+{name:"マンムー",kana:"まんむー",role:"ディフェンス",img:"img/mamoswine.png"},
+{name:"ミミッキュ",kana:"みみっきゅ",role:"バランス",img:"img/mimikyu.png"},
+{name:"ミュウ",kana:"みゅう",role:"アタック",img:"img/mew.png"},
+{name:"ミュウツーX",kana:"みゅうつーえっくす",role:"バランス",img:"img/mewtwo_x.png"},
+{name:"ミュウツーY",kana:"みゅうつーわい",role:"アタック",img:"img/mewtwo_y.png"},
+{name:"ミライドン",kana:"みらいどん",role:"アタック",img:"img/miraidon.webp"},
+{name:"メガリザードンX",kana:"めがりざーどんえっくす",role:"バランス",img:"img/charizard-mega-x.webp"},
+{name:"メガリザードンY",kana:"めがりざーどんわい",role:"アタック",img:"img/charizard-mega-y.webp"},
+{name:"メガルカリオ",kana:"めがるかりお",role:"バランス",img:"img/lucario-mega.webp"},
+{name:"メタグロス",kana:"めたぐろす",role:"バランス",img:"img/metagross.png"},
+{name:"ヤドラン",kana:"やどらん",role:"ディフェンス",img:"img/slowbro.png"},
+{name:"ヤミラミ",kana:"やみらみ",role:"サポート",img:"img/sableye.png"},
+{name:"ヨクバリス",kana:"よくばりす",role:"ディフェンス",img:"img/greedent.webp"},
+{name:"ラティアス",kana:"らてぃあす",role:"サポート",img:"img/latias.webp"},
+{name:"ラティオス",kana:"らてぃおす",role:"アタック",img:"img/latios.png"},
+{name:"ラプラス",kana:"らぷらす",role:"ディフェンス",img:"img/lapras.png"},
+{name:"リザードン",kana:"りざーどん",role:"バランス",img:"img/charizard.webp"},
+{name:"リーフィア",kana:"りーふぃあ",role:"スピード",img:"img/leafeon.webp"},
+{name:"ルカリオ",kana:"るかりお",role:"バランス",img:"img/lucario.png"},
+{name:"ワタシラガ",kana:"わたしらが",role:"サポート",img:"img/eldegoss.png"}
 ];
 
 const roles=["All","アタック","スピード","バランス","ディフェンス","サポート"];
@@ -210,14 +218,14 @@ function showJoinScreen(){showOnly("joinScreen")}
 function roomRef(){return db.ref("rooms/"+roomId)}
 function makePickOrder(size){let a=[];for(let i=0;i<size;i++){a.push({team:"A",player:i});a.push({team:"B",player:i})}return a}
 function stopListening(){if(roomId&&listening)roomRef().off();listening=false}
-function syncState(){if(!roomId)return;roomRef().update({phase,timer,settings,playersA,playersB,readyA,readyB,bansA,bansB,picksA,picksB,turn,pickCount,pickOrder})}
+function syncState(){if(!roomId)return;roomRef().update({phase,timer,settings,playersA,playersB,readyA,readyB,bansA,bansB,picksA,picksB,pickCount,pickOrder})}
 
 function createRoomWithRules(){
   settings={teamSize:Number(teamSizeSelect.value),mode:modeSelect.value,banCount:Number(banCountSelect.value),matchType:matchTypeSelect.value};
   stopListening();roomId=randomId();isHost=true;currentTeam="A";
-  phase="waiting";timer=0;playersA=[myId];playersB=[];readyA=[false];readyB=[];bansA=[];bansB=[];picksA=[];picksB=[];pickCount=0;turn="A";selectedPick=null;pickOrder=makePickOrder(settings.teamSize);
+  phase="waiting";timer=0;playersA=[myId];playersB=[];readyA=[false];readyB=[];bansA=[];bansB=[];picksA=[];picksB=[];pickCount=0;selectedPick=null;pickOrder=makePickOrder(settings.teamSize);
   showOnly("gameScreen");
-  roomRef().set({hostId:myId,phase,timer,settings,playersA,playersB,readyA,readyB,bansA,bansB,picksA,picksB,turn,pickCount,pickOrder}).then(()=>{listenRoom();renderAll()})
+  roomRef().set({hostId:myId,phase,timer,settings,playersA,playersB,readyA,readyB,bansA,bansB,picksA,picksB,pickCount,pickOrder}).then(()=>{listenRoom();renderAll()})
 }
 function randomId(){const c="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";let id="";for(let i=0;i<5;i++)id+=c[Math.floor(Math.random()*c.length)];return id}
 function selectJoinTeam(team){joinTeam=team;joinTeamA.classList.remove("selectedTeam");joinTeamB.classList.remove("selectedTeam");document.getElementById("joinTeam"+team).classList.add("selectedTeam");selectedJoinTeam.innerText=team+"チームを選択中";checkJoinReady()}
@@ -229,9 +237,9 @@ function joinRoom(){
 }
 function joinTeamSlot(team){
   const pk=team==="A"?"playersA":"playersB",rk=team==="A"?"readyA":"readyB";
-  return roomRef().transaction(room=>{if(!room)return room;room[pk]=room[pk]||[];room[rk]=room[rk]||[];if(room[pk].includes(myId))return room;if(room[pk].length>=room.settings.teamSize)return;room[pk].push(myId);room[rk].push(false);return room}).then(r=>{if(!r.committed){alert("このチームは満員です");return false}const room=r.snapshot.val();if(!room[pk].includes(myId)){alert("このチームは満員です");return false}return true})
+  return roomRef().transaction(room=>{if(!room)return room;room[pk]=room[pk]||[];room[rk]=room[rk]||[];if(room[pk].includes(myId))return room;if(room[pk].length>=room.settings.teamSize)return;room[pk].push(myId);room[rk].push(false);return room}).then(r=>{if(!r.committed){alert("このチームは満員です");return false}const room=r.snapshot.val();return room[pk].includes(myId)})
 }
-function listenRoom(){if(listening)return;listening=true;roomRef().on("value",s=>{const d=s.val();if(!d)return;phase=d.phase||"waiting";timer=d.timer||0;settings=d.settings||settings;playersA=d.playersA||[];playersB=d.playersB||[];readyA=d.readyA||[];readyB=d.readyB||[];bansA=d.bansA||[];bansB=d.bansB||[];picksA=d.picksA||[];picksB=d.picksB||[];turn=d.turn||"A";pickCount=d.pickCount||0;pickOrder=d.pickOrder||makePickOrder(settings.teamSize);updateMyPlayerIndex();renderAll()})}
+function listenRoom(){if(listening)return;listening=true;roomRef().on("value",s=>{const d=s.val();if(!d)return;phase=d.phase||"waiting";timer=d.timer||0;settings=d.settings||settings;playersA=d.playersA||[];playersB=d.playersB||[];readyA=d.readyA||[];readyB=d.readyB||[];bansA=d.bansA||[];bansB=d.bansB||[];picksA=d.picksA||[];picksB=d.picksB||[];pickCount=d.pickCount||0;pickOrder=d.pickOrder||makePickOrder(settings.teamSize);updateMyPlayerIndex();renderAll()})}
 function updateMyPlayerIndex(){myPlayerIndex=(currentTeam==="A"?playersA:playersB).indexOf(myId)}
 function toggleReady(){if(myPlayerIndex<0)return;if(currentTeam==="A")readyA[myPlayerIndex]=!readyA[myPlayerIndex];else readyB[myPlayerIndex]=!readyB[myPlayerIndex];syncState()}
 function allJoined(){return playersA.length===settings.teamSize&&playersB.length===settings.teamSize}
@@ -239,13 +247,13 @@ function allReady(){return allJoined()&&readyA.length===settings.teamSize&&ready
 function startDraft(){if(!isHost)return;if(!allReady())return alert("全員参加＋全員OKで開始できます");startBan()}
 function startBan(){phase="ban";timer=20;syncState();popup("BANピック");runTimer(revealBan)}
 function revealBan(){phase="banReveal";syncState();popup("BAN結果表示");setTimeout(()=>{if(isHost)startPick()},3000)}
-function startPick(){phase="pick";timer=15;pickCount=0;turn="A";selectedPick=null;pickOrder=makePickOrder(settings.teamSize);syncState();runTimer(autoPick)}
-function nextTurn(){clearInterval(interval);pickCount++;if(pickCount>=pickOrder.length)return endGame();turn=pickOrder[pickCount].team;timer=15;selectedPick=null;syncState();runTimer(autoPick)}
+function startPick(){phase="pick";timer=15;pickCount=0;selectedPick=null;pickOrder=makePickOrder(settings.teamSize);syncState();runTimer(autoPick)}
+function nextTurn(){clearInterval(interval);pickCount++;if(pickCount>=pickOrder.length)return endGame();timer=15;selectedPick=null;syncState();runTimer(autoPick)}
 function endGame(){phase="result";timer=0;selectedPick=null;syncState()}
 function runTimer(cb){clearInterval(interval);if(!isHost)return;interval=setInterval(()=>{timer--;syncState();if(timer<=0){clearInterval(interval);cb()}},1000)}
 
 function renderAll(){updateUI();renderTeams();renderFilters();renderPokemon();renderControl()}
-function updateUI(){roomIdEl=document.getElementById("roomId");roomIdEl.innerText=roomId?"ロビーID："+roomId:"ロビーID：-----";phaseEl=document.getElementById("phase");phaseEl.innerText=phase;timerEl=document.getElementById("timer");timerEl.innerText=timer;mySeat.innerText=myPlayerIndex>=0?`あなた：チーム${currentTeam} Player${myPlayerIndex+1}`:"あなた：未参加"}
+function updateUI(){roomIdText.innerText=roomId?"ロビーID："+roomId:"ロビーID：-----";phaseText.innerText=phase;timerText.innerText=timer;mySeat.innerText=myPlayerIndex>=0?`あなた：チーム${currentTeam} Player${myPlayerIndex+1}`:"あなた：未参加"}
 function renderTeams(){renderTeam("A");renderTeam("B")}
 function renderTeam(team){
   const area=document.getElementById(team==="A"?"teamA":"teamB"),players=team==="A"?playersA:playersB,ready=team==="A"?readyA:readyB,bans=team==="A"?bansA:bansB,picks=team==="A"?picksA:picksB;
@@ -260,7 +268,14 @@ function normalizeText(t){return (t||"").toLowerCase().replace(/[ァ-ン]/g,s=>S
 function renderPokemon(){
   const q=normalizeText(searchText);
   const list=pokemon.filter(p=>(currentRole==="All"||p.role===currentRole)&&(normalizeText(p.name).includes(q)||normalizeText(p.kana).includes(q)));
-  pokemonList.innerHTML=list.map(p=>{const name=p.name;let blocked=false;if(phase==="ban")blocked=currentTeam==="A"?bansA.includes(name):bansB.includes(name);else blocked=bansA.includes(name)||bansB.includes(name)||picksA.includes(name)||picksB.includes(name);const action=phase==="ban"?`selectBan('${name}')`:phase==="pick"?`choosePick('${name}')`:"";return `<button class="role-${p.role}" style="${blocked?"opacity:.25;":""}${selectedPick===name?"outline:3px solid yellow;":""}" onclick="${action}"><img src="${p.img}" onerror="this.style.display='none'"><span class="pokeName">${name}</span></button>`}).join("")||"該当なし"
+  pokemonList.innerHTML=list.map(p=>{
+    const name=p.name;
+    let blocked=false;
+    if(phase==="ban")blocked=currentTeam==="A"?bansA.includes(name):bansB.includes(name);
+    else blocked=bansA.includes(name)||bansB.includes(name)||picksA.includes(name)||picksB.includes(name);
+    const action=phase==="ban"?`selectBan('${name}')`:phase==="pick"?`choosePick('${name}')`:"";
+    return `<button class="role-${p.role}" style="${blocked?"opacity:.25;":""}${selectedPick===name?"outline:3px solid yellow;":""}" onclick="${action}"><img src="${p.img}" onerror="this.style.display='none'"><span class="pokeName">${name}</span></button>`
+  }).join("")||"該当なし"
 }
 function renderControl(){
   let html="";
@@ -275,10 +290,9 @@ function selectBan(name){if(phase!=="ban"||myPlayerIndex<0)return;let bans=curre
 function choosePick(name){if(phase!=="pick")return;const cur=pickOrder[pickCount];if(!cur||cur.team!==currentTeam||cur.player!==myPlayerIndex)return;if(bansA.includes(name)||bansB.includes(name)||picksA.includes(name)||picksB.includes(name))return;selectedPick=name;renderAll()}
 function confirmPick(){const cur=pickOrder[pickCount];if(!cur||!selectedPick)return;if(cur.team==="A")picksA[cur.player]=selectedPick;else picksB[cur.player]=selectedPick;selectedPick=null;nextTurn()}
 function autoPick(){const cur=pickOrder[pickCount];if(!cur)return;const available=pokemon.map(p=>p.name).filter(n=>!bansA.includes(n)&&!bansB.includes(n)&&!picksA.includes(n)&&!picksB.includes(n));if(!available.length)return endGame();const p=available[Math.floor(Math.random()*available.length)];if(cur.team==="A")picksA[cur.player]=p;else picksB[cur.player]=p;nextTurn()}
-function popup(text){popupEl=document.getElementById("popup");popupEl.innerHTML=`<div class="popupContent"><div class="popupTitle">${text}</div></div>`;popupEl.classList.remove("hidden");setTimeout(()=>popupEl.classList.add("hidden"),1500)}
+function popup(text){popup.innerHTML=`<div class="popupContent"><div class="popupTitle">${text}</div></div>`;popup.classList.remove("hidden");setTimeout(()=>popup.classList.add("hidden"),1500)}
 function copyRoomId(){navigator.clipboard.writeText(roomId).then(()=>alert("コピーしました："+roomId)).catch(()=>alert(roomId))}
 showOnly("homeScreen");
 </script>
-
 </body>
 </html>
