@@ -341,7 +341,278 @@ function normalizeText(t){
     .replace(/[ァ-ン]/g,s=>String.fromCharCode(s.charCodeAt(0)-0x60));
 }
 
+function joinTeamSlot(team){
+
+  const pk=team==="A"
+    ? "playersA"
+    : "playersB";
+
+  const rk=team==="A"
+    ? "readyA"
+    : "readyB";
+
+  return roomRef().transaction(room=>{
+
+    if(!room)return room;
+
+    room[pk]=room[pk]||[];
+    room[rk]=room[rk]||[];
+
+    if(room[pk].includes(myId))return room;
+
+    if(room[pk].length>=room.settings.teamSize){
+      return;
+    }
+
+    room[pk].push(myId);
+    room[rk].push(false);
+
+    return room;
+
+  }).then(r=>{
+
+    if(!r.committed){
+      alert("このチームは満員です");
+      return false;
+    }
+
+    const room=r.snapshot.val();
+
+    return room[pk].includes(myId);
+  });
+}
+
+function stopListening(){
+
+  if(roomId&&listening){
+    roomRef().off();
+  }
+
+  listening=false;
+}
+
+function listenRoom(){
+
+  if(listening)return;
+
+  listening=true;
+
+  roomRef().on("value",s=>{
+
+    const d=s.val();
+
+    if(!d)return;
+
+    phase=d.phase||"waiting";
+    timer=d.timer||0;
+
+    settings=d.settings||settings;
+
+    playersA=d.playersA||[];
+    playersB=d.playersB||[];
+
+    readyA=d.readyA||[];
+    readyB=d.readyB||[];
+
+    bansA=d.bansA||[];
+    bansB=d.bansB||[];
+
+    picksA=d.picksA||[];
+    picksB=d.picksB||[];
+
+    pickCount=d.pickCount||0;
+
+    pickOrder=d.pickOrder||makePickOrder(settings.teamSize);
+
+    updateMyPlayerIndex();
+
+    renderAll();
+  });
+}
+
+function updateMyPlayerIndex(){
+  myPlayerIndex=
+    (currentTeam==="A"
+      ? playersA
+      : playersB
+    ).indexOf(myId);
+}
+
+function syncState(){
+
+  if(!roomId)return;
+
+  roomRef().update({
+    phase,
+    timer,
+    settings,
+    playersA,
+    playersB,
+    readyA,
+    readyB,
+    bansA,
+    bansB,
+    picksA,
+    picksB,
+    pickCount,
+    pickOrder
+  });
+}
+
+function toggleReady(){
+
+  if(myPlayerIndex<0)return;
+
+  if(currentTeam==="A"){
+    readyA[myPlayerIndex]=!readyA[myPlayerIndex];
+  }else{
+    readyB[myPlayerIndex]=!readyB[myPlayerIndex];
+  }
+
+  syncState();
+}
+
+function debugFillRoom(){
+
+  if(!isHost)return;
+
+  playersA=[];
+  playersB=[];
+
+  readyA=[];
+  readyB=[];
+
+  picksA=[];
+  picksB=[];
+
+  for(let i=0;i<settings.teamSize;i++){
+
+    playersA.push(
+      i===0
+        ? myId
+        : "debugA"+i
+    );
+
+    playersB.push(
+      "debugB"+i
+    );
+
+    readyA.push(true);
+    readyB.push(true);
+  }
+
+  currentTeam="A";
+  myPlayerIndex=0;
+
+  syncState();
+}
+
+function allJoined(){
+  return playersA.length===settings.teamSize
+    &&
+    playersB.length===settings.teamSize;
+}
+
+function allReady(){
+  return allJoined()
+    &&
+    readyA.every(Boolean)
+    &&
+    readyB.every(Boolean);
+}
+
+function startDraft(){
+
+  if(!isHost)return;
+
+  if(!allReady()){
+    alert("全員参加＋全員OKで開始できます");
+    return;
+  }
+
+  phase="ban";
+
+  syncState();
+
+  renderAll();
+}
+
+function selectBan(name){
+
+  if(phase!=="ban")return;
+
+  let bans=
+    currentTeam==="A"
+      ? bansA
+      : bansB;
+
+  if(bans.includes(name)){
+    bans=bans.filter(x=>x!==name);
+  }else{
+
+    if(bans.length>=settings.banCount){
+      return;
+    }
+
+    bans.push(name);
+  }
+
+  if(currentTeam==="A"){
+    bansA=bans;
+  }else{
+    bansB=bans;
+  }
+
+  syncState();
+
+  renderAll();
+}
+
+function choosePick(name){
+
+  if(phase!=="pick")return;
+
+  selectedPick=name;
+
+  renderAll();
+}
+
+function confirmPick(){
+
+  const cur=pickOrder[pickCount];
+
+  if(!cur||!selectedPick)return;
+
+  if(cur.team==="A"){
+    picksA[cur.player]=selectedPick;
+  }else{
+    picksB[cur.player]=selectedPick;
+  }
+
+  selectedPick=null;
+
+  pickCount++;
+
+  if(pickCount>=pickOrder.length){
+    phase="result";
+  }
+
+  syncState();
+
+  renderAll();
+}
+
+function copyRoomId(){
+
+  navigator.clipboard
+    .writeText(roomId)
+    .then(()=>{
+      alert("コピーしました："+roomId);
+    });
+}
+
 showOnly("homeScreen");
+
 </script>
 </body>
-</html>  
+</html>
