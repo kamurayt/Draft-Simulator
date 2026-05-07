@@ -20,7 +20,7 @@ h1{font-size:38px;margin-top:70px}
 .selectedTeam,.selectedRole{background:yellow!important;color:black!important}
 .top{padding:8px;background:#080d1a;border-bottom:1px solid #26304a;position:sticky;top:0;z-index:5}
 .layout{display:grid;grid-template-columns:.85fr 2.3fr .85fr;gap:5px;padding:5px;height:calc(100vh - 120px)}
-.team{display:flex;flex-direction:column;gap:6px}
+.team{display:flex;flex-direction:column;gap:6px;overflow-y:auto}
 .player{border:2px solid #444;border-radius:10px;background:#141b2f;padding:7px 3px;font-size:11px;min-height:50px}
 .me{border-color:#5ecbff;box-shadow:0 0 12px #5ecbff}
 .ready{border-color:#6dff91}
@@ -49,7 +49,7 @@ h1{font-size:38px;margin-top:70px}
 
 <body>
 
-<div id="popup" class="popup hidden"></div>
+<div id="popupBox" class="popup hidden"></div>
 
 <div id="homeScreen" class="screen">
   <h1>ドラフトシミュレーター</h1>
@@ -60,44 +60,10 @@ h1{font-size:38px;margin-top:70px}
 <div id="ruleScreen" class="screen hidden">
   <h2>ルール設定</h2>
 
-  <div class="ruleBox">
-    <span>人数</span>
-    <select id="teamSizeSelect">
-      <option value="3">3v3</option>
-      <option value="5">5v5</option>
-    </select>
-  </div>
-
-  <div class="ruleBox">
-    <span>形式</span>
-    <select id="modeSelect">
-      <option value="normal">通常ドラフト</option>
-      <option value="fearless">フィアレスドラフト</option>
-    </select>
-  </div>
-
-  <div class="ruleBox">
-    <span>BAN数</span>
-    <select id="banCountSelect">
-      <option value="3">3体</option>
-      <option value="4">4体</option>
-      <option value="5" selected>5体</option>
-      <option value="6">6体</option>
-      <option value="7">7体</option>
-      <option value="8">8体</option>
-      <option value="9">9体</option>
-      <option value="10">10体</option>
-    </select>
-  </div>
-
-  <div class="ruleBox">
-    <span>試合形式</span>
-    <select id="matchTypeSelect">
-      <option value="BO1">BO1</option>
-      <option value="BO3">BO3</option>
-      <option value="BO5">BO5</option>
-    </select>
-  </div>
+  <div class="ruleBox"><span>人数</span><select id="teamSizeSelect"><option value="3">3v3</option><option value="5">5v5</option></select></div>
+  <div class="ruleBox"><span>形式</span><select id="modeSelect"><option value="normal">通常ドラフト</option><option value="fearless">フィアレスドラフト</option></select></div>
+  <div class="ruleBox"><span>BAN数</span><select id="banCountSelect"><option value="3">3体</option><option value="4">4体</option><option value="5" selected>5体</option><option value="6">6体</option><option value="7">7体</option><option value="8">8体</option><option value="9">9体</option><option value="10">10体</option></select></div>
+  <div class="ruleBox"><span>試合形式</span><select id="matchTypeSelect"><option value="BO1">BO1</option><option value="BO3">BO3</option><option value="BO5">BO5</option></select></div>
 
   <button onclick="createRoomWithRules()">このルールで作成</button>
   <button onclick="showHome()">戻る</button>
@@ -117,10 +83,7 @@ h1{font-size:38px;margin-top:70px}
 
 <div id="gameScreen" class="hidden">
   <div class="top">
-    <div>
-      <span id="roomIdText">ロビーID：-----</span>
-      <button onclick="copyRoomId()">コピー</button>
-    </div>
+    <div><span id="roomIdText">ロビーID：-----</span><button onclick="copyRoomId()">コピー</button></div>
     <div><span id="playerCountText">参加人数：0 / 0</span></div>
     <div id="mySeat">あなた：未参加</div>
   </div>
@@ -153,7 +116,7 @@ const firebaseConfig={
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
-let roomId="",phase="waiting",timer=0,interval=null,listening=false,isHost=false;
+let roomId="",phase="waiting",timer=0,listening=false,isHost=false;
 let currentTeam="",joinTeam="",myPlayerIndex=-1,pickCount=0,selectedPick=null;
 let settings={teamSize:3,mode:"normal",banCount:5,matchType:"BO1"};
 let playersA=[],playersB=[],readyA=[],readyB=[],bansA=[],bansB=[],picksA=[],picksB=[],pickOrder=[];
@@ -270,16 +233,12 @@ function showHome(){showOnly("homeScreen")}
 function showRuleScreen(){showOnly("ruleScreen")}
 function showJoinScreen(){showOnly("joinScreen")}
 
-function roomRef(){
-  return db.ref("rooms/"+roomId);
-}
+function roomRef(){return db.ref("rooms/"+roomId)}
 
 function randomId(){
   const c="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let id="";
-  for(let i=0;i<5;i++){
-    id+=c[Math.floor(Math.random()*c.length)];
-  }
+  for(let i=0;i<5;i++)id+=c[Math.floor(Math.random()*c.length)];
   return id;
 }
 
@@ -293,79 +252,37 @@ function makePickOrder(size){
 }
 
 function updateUI(){
-  roomIdText.innerText=roomId ? "ロビーID："+roomId : "ロビーID：-----";
-
+  roomIdText.innerText=roomId?"ロビーID："+roomId:"ロビーID：-----";
   const total=settings.teamSize*2;
   const joined=playersA.length+playersB.length;
   playerCountText.innerText=`参加人数：${joined} / ${total}`;
-
-  mySeat.innerText=myPlayerIndex>=0
-    ? `あなた：チーム${currentTeam} Player${myPlayerIndex+1}`
-    : "あなた：未参加";
+  mySeat.innerText=myPlayerIndex>=0?`あなた：チーム${currentTeam} Player${myPlayerIndex+1}`:"あなた：未参加";
 }
 
 function renderFilters(){
-  roleFilters.innerHTML=roles.map(r=>`
-    <button class="${currentRole===r?"selectedRole":""}" onclick="setRole('${r}')">${r}</button>
-  `).join("");
+  roleFilters.innerHTML=roles.map(r=>`<button class="${currentRole===r?"selectedRole":""}" onclick="setRole('${r}')">${r}</button>`).join("");
 }
 
-function setRole(r){
-  currentRole=r;
-  renderAll();
-}
-
-function setSearchText(){
-  searchText=searchInput.value.trim();
-  renderPokemon();
-}
-
-function normalizeText(t){
-  return (t||"").toLowerCase().replace(/[ァ-ン]/g,s=>String.fromCharCode(s.charCodeAt(0)-0x60));
-}
+function setRole(r){currentRole=r;renderAll()}
+function setSearchText(){searchText=searchInput.value.trim();renderPokemon()}
+function normalizeText(t){return (t||"").toLowerCase().replace(/[ァ-ン]/g,s=>String.fromCharCode(s.charCodeAt(0)-0x60))}
 
 function renderPokemon(){
   const q=normalizeText(searchText);
-
-  const filtered=pokemon.filter(p=>
-    (currentRole==="All"||p.role===currentRole)&&
-    (normalizeText(p.name).includes(q)||normalizeText(p.kana).includes(q))
-  );
+  const filtered=pokemon.filter(p=>(currentRole==="All"||p.role===currentRole)&&(normalizeText(p.name).includes(q)||normalizeText(p.kana).includes(q)));
 
   pokemonList.innerHTML=filtered.map(p=>{
     const name=p.name;
-
-    let blocked=false;
-
-    if(phase==="ban"){
-      blocked=currentTeam==="A"?bansA.includes(name):bansB.includes(name);
-    }else{
-      blocked=bansA.includes(name)||bansB.includes(name)||picksA.includes(name)||picksB.includes(name);
-    }
-
-    const action=phase==="ban"
-      ? `selectBan('${name}')`
-      : phase==="pick"
-        ? `choosePick('${name}')`
-        : "";
-
-    return `
-      <button
-        class="role-${p.role}"
-        style="${blocked?"opacity:.25;":""}${selectedPick===name?"outline:3px solid yellow;":""}"
-        onclick="${action}"
-      >
-        <img src="${p.img}" onerror="this.style.display='none'">
-        <span class="pokeName">${p.name}</span>
-      </button>
-    `;
+    const blocked=bansA.includes(name)||bansB.includes(name)||picksA.includes(name)||picksB.includes(name);
+    const action=phase==="ban"?`selectBan('${name}')`:phase==="pick"?`choosePick('${name}')`:"";
+    return `<button class="role-${p.role}" style="${blocked?"opacity:.25;":""}${selectedPick===name?"outline:3px solid yellow;":""}" onclick="${action}">
+      <img src="${p.img}" onerror="this.style.display='none'">
+      <span class="pokeName">${p.name}</span>
+    </button>`;
   }).join("")||"該当なし";
 }
 
-function renderTeams(){
-  renderTeam("A");
-  renderTeam("B");
-}
+function renderTeams(){renderTeam("A");renderTeam("B")}
 
 function renderTeam(team){
   const area=document.getElementById(team==="A"?"teamA":"teamB");
@@ -375,29 +292,18 @@ function renderTeam(team){
   const picks=team==="A"?picksA:picksB;
 
   let html=`<h3>チーム${team}</h3>`;
-
-  html+=`
-    <div class="player banBox">
-      <div>BAN</div>
-      <div>${bans.length?bans.join("<br>"):"なし"}</div>
-    </div>
-  `;
+  html+=`<div class="player banBox"><div>BAN</div><div>${bans.length?bans.join("<br>"):"なし"}</div></div>`;
 
   for(let i=0;i<settings.teamSize;i++){
     const current=pickOrder[pickCount];
-
     const active=phase==="pick"&&current&&current.team===team&&current.player===i;
     const me=currentTeam===team&&myPlayerIndex===i;
-
-    html+=`
-      <div class="player ${active?"active":""} ${me?"me":""} ${ready[i]?"ready":""}">
-        <div>Player ${i+1}</div>
-        <div>${players[i]?"参加済み":"未参加"} / ${ready[i]?"OK":"未OK"}</div>
-        <strong>${picks[i]||"未選択"}</strong>
-      </div>
-    `;
+    html+=`<div class="player ${active?"active":""} ${me?"me":""} ${ready[i]?"ready":""}">
+      <div>Player ${i+1}</div>
+      <div>${players[i]?"参加済み":"未参加"} / ${ready[i]?"OK":"未OK"}</div>
+      <strong>${picks[i]||"未選択"}</strong>
+    </div>`;
   }
-
   area.innerHTML=html;
 }
 
@@ -405,30 +311,19 @@ function renderControl(){
   let html="";
 
   if(phase==="waiting"){
-    const ready=myPlayerIndex>=0
-      ? currentTeam==="A"?readyA[myPlayerIndex]:readyB[myPlayerIndex]
-      : false;
-
-    html=`
-      <div>ルール：${settings.teamSize}v${settings.teamSize} / ${settings.mode==="fearless"?"フィアレス":"通常"} / BAN${settings.banCount} / ${settings.matchType}</div>
-      <div>人数：A ${playersA.length}/${settings.teamSize}　B ${playersB.length}/${settings.teamSize}</div>
-
-      <button onclick="toggleReady()" ${myPlayerIndex>=0?"":"disabled"}>${ready?"OK解除":"準備OK"}</button>
-
-      <button onclick="startDraft()" ${isHost&&allReady()?"":"disabled"}>スタート</button>
-
-      <button onclick="debugFillRoom()" ${isHost?"":"disabled"}>テスト用：全員参加OK</button>
-
-      <div>${isHost?"全員OKでスタートできます":"ホストの開始を待っています"}</div>
-    `;
+    const ready=myPlayerIndex>=0?(currentTeam==="A"?readyA[myPlayerIndex]:readyB[myPlayerIndex]):false;
+    html=`<div>ルール：${settings.teamSize}v${settings.teamSize} / ${settings.mode==="fearless"?"フィアレス":"通常"} / BAN${settings.banCount} / ${settings.matchType}</div>
+    <div>人数：A ${playersA.length}/${settings.teamSize}　B ${playersB.length}/${settings.teamSize}</div>
+    <button onclick="toggleReady()" ${myPlayerIndex>=0?"":"disabled"}>${ready?"OK解除":"準備OK"}</button>
+    <button onclick="startDraft()" ${isHost&&allReady()?"":"disabled"}>スタート</button>
+    <button onclick="debugFillRoom()" ${isHost?"":"disabled"}>テスト用：全員参加OK</button>
+    <div>${isHost?"全員OKでスタートできます":"ホストの開始を待っています"}</div>`;
   }
 
   if(phase==="ban"){
-    html=`
-      <div>BANフェーズ：各チーム${settings.banCount}体まで</div>
-      <div>A ${bansA.length}/${settings.banCount}　B ${bansB.length}/${settings.banCount}</div>
-      <button onclick="finishBan()" ${isHost?"":"disabled"}>BAN確定</button>
-    `;
+    html=`<div>BANフェーズ：各チーム${settings.banCount}体まで</div>
+    <div>A ${bansA.length}/${settings.banCount}　B ${bansB.length}/${settings.banCount}</div>
+    <button onclick="finishBan()" ${isHost?"":"disabled"}>BAN確定</button>`;
   }
 
   if(phase==="banReveal"){
@@ -438,13 +333,10 @@ function renderControl(){
   if(phase==="pick"){
     const cur=pickOrder[pickCount];
     const mine=cur&&cur.team===currentTeam&&cur.player===myPlayerIndex;
-
-    html=`
-      <div>現在：チーム${cur.team} Player${cur.player+1}</div>
-      <div>${mine?"あなたの番です":"待機中"}</div>
-      <div class="bigPick">${selectedPick||"未選択"}</div>
-      <button onclick="confirmPick()" ${mine&&selectedPick?"":"disabled"}>決定</button>
-    `;
+    html=`<div>現在：チーム${cur.team} Player${cur.player+1}</div>
+    <div>${mine?"あなたの番です":"待機中"}</div>
+    <div class="bigPick">${selectedPick||"未選択"}</div>
+    <button onclick="confirmPick()" ${mine&&selectedPick?"":"disabled"}>決定</button>`;
   }
 
   if(phase==="result"){
@@ -454,369 +346,210 @@ function renderControl(){
   pickControl.innerHTML=html;
 }
 
-function renderAll(){
-  updateUI();
-  renderFilters();
-  renderPokemon();
-  renderTeams();
-  renderControl();
-}
+function renderAll(){updateUI();renderFilters();renderPokemon();renderTeams();renderControl()}
 
 function createRoomWithRules(){
-  settings={
-    teamSize:Number(teamSizeSelect.value),
-    mode:modeSelect.value,
-    banCount:Number(banCountSelect.value),
-    matchType:matchTypeSelect.value
-  };
-
+  settings={teamSize:Number(teamSizeSelect.value),mode:modeSelect.value,banCount:Number(banCountSelect.value),matchType:matchTypeSelect.value};
   stopListening();
-
   roomId=randomId();
   isHost=true;
   currentTeam="A";
-
   phase="waiting";
   timer=0;
-
   playersA=[myId];
   playersB=[];
-
   readyA=[false];
   readyB=[];
-
   bansA=[];
   bansB=[];
-
   picksA=[];
   picksB=[];
-
   pickCount=0;
   selectedPick=null;
-
   pickOrder=makePickOrder(settings.teamSize);
-
   showOnly("gameScreen");
-
-  roomRef().set({
-    hostId:myId,
-    phase,timer,settings,
-    playersA,playersB,
-    readyA,readyB,
-    bansA,bansB,
-    picksA,picksB,
-    pickCount,pickOrder
-  }).then(()=>{
-    listenRoom();
-    renderAll();
-  });
+  roomRef().set({hostId:myId,phase,timer,settings,playersA,playersB,readyA,readyB,bansA,bansB,picksA,picksB,pickCount,pickOrder}).then(()=>{listenRoom();renderAll()});
 }
 
 function selectJoinTeam(team){
   joinTeam=team;
-
   joinTeamA.classList.remove("selectedTeam");
   joinTeamB.classList.remove("selectedTeam");
-
   document.getElementById("joinTeam"+team).classList.add("selectedTeam");
-
   selectedJoinTeam.innerText=team+"チームを選択中";
-
   checkJoinReady();
 }
 
-function checkJoinReady(){
-  loginButton.disabled=!(joinRoomId.value.trim()&&joinTeam);
-}
+function checkJoinReady(){loginButton.disabled=!(joinRoomId.value.trim()&&joinTeam)}
 
 function joinRoom(){
   roomId=joinRoomId.value.trim().toUpperCase();
-
-  if(!roomId||!joinTeam){
-    alert("ロビーIDとチームを選択してください");
-    return;
-  }
-
+  if(!roomId||!joinTeam){alert("ロビーIDとチームを選択してください");return}
   stopListening();
-
   currentTeam=joinTeam;
   isHost=false;
-
   roomRef().once("value").then(s=>{
-    if(!s.exists()){
-      alert("ロビーが見つかりません");
-      return;
-    }
-
+    if(!s.exists()){alert("ロビーが見つかりません");return}
     const d=s.val();
-
-    if(d.phase!=="waiting"){
-      alert("このロビーは開始済みです");
-      return;
-    }
-
+    if(d.phase!=="waiting"){alert("このロビーは開始済みです");return}
     settings=d.settings;
-
-    joinTeamSlot(currentTeam).then(ok=>{
-      if(!ok)return;
-      showOnly("gameScreen");
-      listenRoom();
-    });
+    joinTeamSlot(currentTeam).then(ok=>{if(!ok)return;showOnly("gameScreen");listenRoom()});
   });
 }
 
 function joinTeamSlot(team){
   const pk=team==="A"?"playersA":"playersB";
   const rk=team==="A"?"readyA":"readyB";
-
   return roomRef().transaction(room=>{
     if(!room)return room;
-
     room[pk]=room[pk]||[];
     room[rk]=room[rk]||[];
-
     if(room[pk].includes(myId))return room;
-
-    if(room[pk].length>=room.settings.teamSize){
-      return;
-    }
-
+    if(room[pk].length>=room.settings.teamSize)return;
     room[pk].push(myId);
     room[rk].push(false);
-
     return room;
   }).then(r=>{
-    if(!r.committed){
-      alert("このチームは満員です");
-      return false;
-    }
-
+    if(!r.committed){alert("このチームは満員です");return false}
     const room=r.snapshot.val();
     return room[pk].includes(myId);
   });
 }
 
-function stopListening(){
-  if(roomId&&listening){
-    roomRef().off();
-  }
-  listening=false;
-}
+function stopListening(){if(roomId&&listening)roomRef().off();listening=false}
 
 function listenRoom(){
   if(listening)return;
-
   listening=true;
-
   roomRef().on("value",s=>{
     const d=s.val();
     if(!d)return;
-
     phase=d.phase||"waiting";
     timer=d.timer||0;
-
     settings=d.settings||settings;
-
     playersA=d.playersA||[];
     playersB=d.playersB||[];
-
     readyA=d.readyA||[];
     readyB=d.readyB||[];
-
     bansA=d.bansA||[];
     bansB=d.bansB||[];
-
     picksA=d.picksA||[];
     picksB=d.picksB||[];
-
     pickCount=d.pickCount||0;
-
     pickOrder=d.pickOrder||makePickOrder(settings.teamSize);
-
     updateMyPlayerIndex();
-
     renderAll();
   });
 }
 
-function updateMyPlayerIndex(){
-  myPlayerIndex=(currentTeam==="A"?playersA:playersB).indexOf(myId);
-}
+function updateMyPlayerIndex(){myPlayerIndex=(currentTeam==="A"?playersA:playersB).indexOf(myId)}
 
 function syncState(){
   if(!roomId)return;
-
-  roomRef().update({
-    phase,timer,settings,
-    playersA,playersB,
-    readyA,readyB,
-    bansA,bansB,
-    picksA,picksB,
-    pickCount,pickOrder
-  });
+  roomRef().update({phase,timer,settings,playersA,playersB,readyA,readyB,bansA,bansB,picksA,picksB,pickCount,pickOrder});
 }
 
 function toggleReady(){
   if(myPlayerIndex<0)return;
-
-  if(currentTeam==="A"){
-    readyA[myPlayerIndex]=!readyA[myPlayerIndex];
-  }else{
-    readyB[myPlayerIndex]=!readyB[myPlayerIndex];
-  }
-
+  if(currentTeam==="A")readyA[myPlayerIndex]=!readyA[myPlayerIndex];
+  else readyB[myPlayerIndex]=!readyB[myPlayerIndex];
   syncState();
 }
 
 function debugFillRoom(){
   if(!isHost)return;
-
   playersA=[];
   playersB=[];
-
   readyA=[];
   readyB=[];
-
   picksA=[];
   picksB=[];
-
   bansA=[];
   bansB=[];
-
   for(let i=0;i<settings.teamSize;i++){
     playersA.push(i===0?myId:"debugA"+i);
     playersB.push("debugB"+i);
     readyA.push(true);
     readyB.push(true);
   }
-
   currentTeam="A";
   myPlayerIndex=0;
-
   syncState();
 }
 
-function allJoined(){
-  return playersA.length===settings.teamSize && playersB.length===settings.teamSize;
-}
-
-function allReady(){
-  return allJoined() && readyA.every(Boolean) && readyB.every(Boolean);
-}
+function allJoined(){return playersA.length===settings.teamSize&&playersB.length===settings.teamSize}
+function allReady(){return allJoined()&&readyA.every(Boolean)&&readyB.every(Boolean)}
 
 function startDraft(){
   if(!isHost)return;
-
-  if(!allReady()){
-    alert("全員参加＋全員OKで開始できます");
-    return;
-  }
-
+  if(!allReady()){alert("全員参加＋全員OKで開始できます");return}
   phase="ban";
   syncState();
-  popup("BANピック");
+  showPopup("BANピック");
 }
 
 function selectBan(name){
   if(phase!=="ban")return;
-
   let bans=currentTeam==="A"?bansA:bansB;
-
-  if(bans.includes(name)){
-    bans=bans.filter(x=>x!==name);
-  }else{
-    if(bans.length>=settings.banCount){
-      return;
-    }
+  if(bans.includes(name))bans=bans.filter(x=>x!==name);
+  else{
+    if(bans.length>=settings.banCount)return;
     bans.push(name);
   }
-
-  if(currentTeam==="A"){
-    bansA=bans;
-  }else{
-    bansB=bans;
-  }
-
+  if(currentTeam==="A")bansA=bans;
+  else bansB=bans;
   syncState();
   renderAll();
 }
 
 function finishBan(){
   if(!isHost)return;
-
   phase="banReveal";
   syncState();
-  popup("BAN結果表示");
+  showPopup("BAN結果表示");
+  setTimeout(()=>{startPick()},2000);
+}
 
-  setTimeout(()=>{
-    phase="pick";
-    pickCount=0;
-    selectedPick=null;
-    pickOrder=makePickOrder(settings.teamSize);
-    syncState();
-  },2000);
+function startPick(){
+  if(!isHost)return;
+  phase="pick";
+  pickCount=0;
+  selectedPick=null;
+  pickOrder=makePickOrder(settings.teamSize);
+  syncState();
+  renderAll();
 }
 
 function choosePick(name){
   if(phase!=="pick")return;
-
   const cur=pickOrder[pickCount];
-
   if(!cur)return;
-
-  if(cur.team!==currentTeam || cur.player!==myPlayerIndex)return;
-
-  if(
-    bansA.includes(name)||
-    bansB.includes(name)||
-    picksA.includes(name)||
-    picksB.includes(name)
-  )return;
-
+  if(cur.team!==currentTeam||cur.player!==myPlayerIndex)return;
+  if(bansA.includes(name)||bansB.includes(name)||picksA.includes(name)||picksB.includes(name))return;
   selectedPick=name;
   renderAll();
 }
 
 function confirmPick(){
   const cur=pickOrder[pickCount];
-
   if(!cur||!selectedPick)return;
-
-  if(cur.team==="A"){
-    picksA[cur.player]=selectedPick;
-  }else{
-    picksB[cur.player]=selectedPick;
-  }
-
+  if(cur.team==="A")picksA[cur.player]=selectedPick;
+  else picksB[cur.player]=selectedPick;
   selectedPick=null;
   pickCount++;
-
-  if(pickCount>=pickOrder.length){
-    phase="result";
-  }
-
+  if(pickCount>=pickOrder.length)phase="result";
   syncState();
   renderAll();
 }
 
-function popup(text){
-  popup.innerHTML=`
-    <div class="popupContent">
-      <div class="popupTitle">${text}</div>
-    </div>
-  `;
-
-  popup.classList.remove("hidden");
-
-  setTimeout(()=>{
-    popup.classList.add("hidden");
-  },1500);
+function showPopup(text){
+  popupBox.innerHTML=`<div class="popupContent"><div class="popupTitle">${text}</div></div>`;
+  popupBox.classList.remove("hidden");
+  setTimeout(()=>{popupBox.classList.add("hidden")},1500);
 }
 
 function copyRoomId(){
-  navigator.clipboard.writeText(roomId)
-    .then(()=>alert("コピーしました："+roomId))
-    .catch(()=>alert(roomId));
+  navigator.clipboard.writeText(roomId).then(()=>alert("コピーしました："+roomId)).catch(()=>alert(roomId));
 }
 
 showOnly("homeScreen");
